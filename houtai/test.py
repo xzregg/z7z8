@@ -22,3 +22,7 @@ b.save()
 b.name='123'
 b.save()
 print connection.queries
+from log import LOG
+
+l = LOG('root')
+l.info('123')
