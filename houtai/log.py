@@ -12,6 +12,7 @@ class LOG(object):
         logger = logging.getLogger(name)
         return logger
 
+class LOG1(logging.getLoggerClass()):
 
 if __name__ == '__main__':
     log = LOG()
