@@ -16,7 +16,11 @@ from tornado.concurrent import run_on_executor
 
 
 
-settings = {'debug': True}#开启debug模式自动重启
+settings = {
+   'debug': True,
+    'template_path':os.path.join(os.path.dirname(__file__), "templates"),
+    'static_path':os.path.join(os.path.dirname(__file__), "static"),
+}#开启debug模式自动重启
 
 sys.path.insert(0,os.path.dirname(__file__))
 
@@ -33,22 +37,43 @@ class testThread(threading.Thread):
         self.j.finish('ok')
 
 
+class BaseHandler(tornado.web.RequestHandler):
+    def render(selfb,template_name,__d={},**kwargs):
+            __d = __d or kwargs
+            __d.pop('self',0)
+            super(BaseHandler,selfb).render(template_name,**__d)
 
-class MainHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        print 'initialize' + '-' * 40
+        print self.get_argument('test','')
+        print dir(self.request.cookies)
+        self._st = time.time()
+        self.log = None
+    #所有方法
+    def prepare(self):
+        print 'prepare' + '-' * 40
+        print self.get_argument('test','')
+        self.session = {'asd':123}
+        print dir(self.request)
 
+    def on_finish(self):
+        if self.log:
+            print 'log'+'-'*40
+        print 'use time:%s' % (time.time() - self._st)
+
+class MainHandler(BaseHandler):
     #@tornado.web.asynchronous #取消自动finish
     #@tornado.gen.engine
     #@tornado.web.asynchronous
     #@tornado.gen.coroutine
-
-    @tornado.web.asynchronous
+    #@tornado.web.asynchronous
     def get(self):
-        args = self.get_argument('test','')
-        if args == '123':
-            t = testThread(self)
-            t.start()
-        else:
-            self.finish('asd')
+        #args = self.get_argument('test','')
+        self.write('111')
+        a = '3'
+        print self.session
+        
+        self.render('test.html',locals())        #a = '--1'
 
 
     def callbacka(self,a='asd'):
@@ -59,6 +84,8 @@ class MainHandler(tornado.web.RequestHandler):
                    '<input type="submit" value="Submit">'
                    '</form></body></html>')
         self.finish()
+
+
 application = tornado.web.Application([
     #(r'/',MainHandler),
     (r'/','hello.MainHandler'),
