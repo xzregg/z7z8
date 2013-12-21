@@ -14,10 +14,10 @@ from tornado.options import define, options
 import threading
 from tornado.concurrent import run_on_executor
 import MySQLdb
-
+import tornado.httpserver
 
 settings = {
-   'debug': True,
+   #'debug': True,
     'template_path':os.path.join(os.path.dirname(__file__), "templates"),
     'static_path':os.path.join(os.path.dirname(__file__), "static"),
 }#开启debug模式自动重启
@@ -81,17 +81,17 @@ class MainHandler(BaseHandler):
     #@tornado.gen.engine
     #@tornado.web.asynchronous
     #@tornado.gen.coroutine
-    @tornado.web.asynchronous
+    #@tornado.web.asynchronous
     def get(self):
         #args = self.get_argument('test','')
         #t = testThread(self)
         #t.start()
-        self.write(str(connetmysql()))
+        #self.write(str(connetmysql()))
+        time.sleep(4)
+        self.write('123')
         self.finish()
        # print testThread.num
-
         #self.render('test.html',locals())        #a = '--1'
-
 
     def callbacka(self,a='asd'):
         time.sleep(10)
@@ -109,8 +109,19 @@ application = tornado.web.Application([
 
 def lee():
     print 'lee 3s'
-if __name__ == '__main__':
+
+def sigle():
     tornado.options.parse_command_line()
     application.listen(8888)
     #tornado.ioloop.PeriodicCallback(lee,3000).start()#增加后台任务
     tornado.ioloop.IOLoop.instance().start()
+
+def mul():
+    sockets = tornado.netutil.bind_sockets(8888)
+    tornado.process.fork_processes(2)#不同逻辑阻塞时不同ip可以分到不同进程
+    server = tornado.httpserver.HTTPServer(application, xheaders=True)
+    server.add_sockets(sockets)
+    tornado.ioloop.IOLoop.instance().start()
+
+if __name__ == '__main__':
+    mul()

@@ -2,7 +2,7 @@
 #线程池 by xzr
 
 import threading
-import time
+import time,datetime
 import Queue
 import MySQLdb
 import os,sys
@@ -19,7 +19,7 @@ class ThreadWork(threading.Thread):
                 try:
                     func_grgs = self.manager.jobQ.get()
                     if func_grgs:
-                        print '%s get the job' % self.mark
+                        #print '%s get the job' % self.mark
                         res = apply(*func_grgs)
                         if get_ret :
                             self.manager.resultQ.put(res)
@@ -103,5 +103,29 @@ def mul_test():
 
     T.close()
 
+con = MySQLdb.connect(host='127.0.0.1',passwd='123456',db='aa')
+lock = threading.Lock()
+def insert_mysql(x):
+    try:
+        lock.acquire()
+        _now = datetime.datetime.now()
+        cur = con.cursor()
+        sql = "insert into  bb(id,text) values(%s,%s)"
+        cur.execute(sql,(x,str(_now).split()[1]))
+#        con.commit()
+    except:
+        traceback.print_exc()
+    finally:
+        lock.release()
+
+
+def mul_insert():
+    T = ThreadPool(100)
+    for i in xrange(10):
+        for i in xrange(1000):
+            T.append(insert_mysql,(i,))
+        time.sleep(5)
+    T.close()
+
 if __name__ == '__main__':
-    mul_test()
+    mul_insert()
