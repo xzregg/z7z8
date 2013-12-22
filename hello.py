@@ -15,27 +15,15 @@ import threading
 from tornado.concurrent import run_on_executor
 import MySQLdb
 import tornado.httpserver
+import uuid
 
 settings = {
-   #'debug': True,
+    'debug': True,
     'template_path':os.path.join(os.path.dirname(__file__), "templates"),
     'static_path':os.path.join(os.path.dirname(__file__), "static"),
+    'cookie_secret':'23123123'
 }#开启debug模式自动重启
 
-sys.path.insert(0,os.path.dirname(__file__))
-
-def connetmysql():
-    con = MySQLdb.connect(host='127.0.0.1',passwd='123456',db='aa')
-    cur = con.cursor()
-    cur.execute('select * from bb;')
-    return cur.fetchall()
-
-def baidu():
-    print 'connect baidu'
-    h=httplib.HTTPConnection('www.baidu.com:81')
-    h.request('GET','/','')
-    r=h.getresponse()
-    r.read()
 
 class testThread(threading.Thread):
     num = 0
@@ -52,43 +40,18 @@ class testThread(threading.Thread):
         self.j.finish('ok')
 
 
-class BaseHandler(tornado.web.RequestHandler):
-    def render(selfb,template_name,__d={},**kwargs):
-            __d = __d or kwargs
-            __d.pop('self',0)
-            super(BaseHandler,selfb).render(template_name,**__d)
-
-    def initialize(self):
-        #print 'initialize' + '-' * 40
-        #print self.get_argument('test','')
-        #print dir(self.request.cookies)
-        self._st = time.time()
-        self.log = None
-    #所有方法
-    def prepare(self):
-        #print 'prepare' + '-' * 40
-        #print self.get_argument('test','')
-        self.session = {'asd':123}
-       # print dir(self.request)
-
-    def on_finish(self):
-        if self.log:
-            print 'log'+'-'*40
-        #print 'use time:%s' % (time.time() - self._st)
+from base.session import Session
+from base import BaseHandler
 
 class MainHandler(BaseHandler):
-    #@tornado.web.asynchronous #取消自动finish
     #@tornado.gen.engine
-    #@tornado.web.asynchronous
     #@tornado.gen.coroutine
     #@tornado.web.asynchronous
     def get(self):
-        #args = self.get_argument('test','')
-        #t = testThread(self)
-        #t.start()
-        #self.write(str(connetmysql()))
-        time.sleep(4)
-        self.write('123')
+        #self.session['asd'] = dict(zip(range(100),[ str(i)*1440 for i in range(100)]))
+        self.write('asd')
+        print self.cookies
+        self.set_cookie('asd','bbb')
         self.finish()
        # print testThread.num
         #self.render('test.html',locals())        #a = '--1'
@@ -124,4 +87,4 @@ def mul():
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':
-    mul()
+    sigle()

@@ -8,6 +8,16 @@ import MySQLdb
 import os,sys
 import traceback
 
+import functools
+def runtime(f):
+    @functools.wraps(f)
+    def func(*args,**kwargv):
+        st = time.time()
+        f(*args,**kwargv)
+        print ' run %s use time:%.2f' % (f.__name__,time.time() - st)
+    return func
+
+
 class ThreadWork(threading.Thread):
         def __init__(self,manager,mark):
             super(ThreadWork,self).__init__()
@@ -103,10 +113,12 @@ def mul_test():
 
     T.close()
 
-con = MySQLdb.connect(host='127.0.0.1',passwd='123456',db='aa')
-lock = threading.Lock()
+
+
 def insert_mysql(x):
+    lock = threading.Lock()
     try:
+        con = MySQLdb.connect(host='127.0.0.1',passwd='123456',db='aa')
         lock.acquire()
         _now = datetime.datetime.now()
         cur = con.cursor()
