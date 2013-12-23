@@ -50,8 +50,13 @@ class MainHandler(BaseHandler):
     def get(self):
         #self.session['asd'] = dict(zip(range(100),[ str(i)*1440 for i in range(100)]))
         self.write('asd')
-        print self.cookies
-        self.set_cookie('asd','bbb')
+        #print self.cookies
+        #self.set_cookie('asd','bbb')
+        print self.session
+        self.session['asad'] = {1:2}
+        _k = self.get_argument('k','k')
+        _v = self.get_argument('v','v')
+        self.session[_k] = _v
         self.finish()
        # print testThread.num
         #self.render('test.html',locals())        #a = '--1'

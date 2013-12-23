@@ -5,52 +5,73 @@ import sys,os,time
 import memcache
 import redis
 import cPickle
-
+from  settings import SESSION_ENGINE
 
 
 class SessionEngine(object):
-    #session_data = {}
-    def save_session(self):pass
+    cli = None
+    address = None
+    session_data = {}
+    def __init__(self,sid):
+        self.sid = sid
+        self.__class__.session_data.setdefault(sid,{})
+        self.session_data = self.__class__.session_data[sid]
+    def save_session(self,expire=7200):
+        self.__class__.session_data[self.sid] = self.session_data
+    def clear_session(self):pass
 
 class RedisSessionEngine(SessionEngine):
-    def __init__(self,sid,address=('127.0.0.1',6379)):
-        self.sid = sid
-        print sid
-        self.rc = redis.Redis(*address,db=0)
-        _s = self.rc.get(sid)
+    rc = None
+    address = None
+    def __init__(self,sid):
+        if not self.__class__.rc:
+            self.__class__.rc = redis.Redis(*self.address,db=0)
+        self.sid = 'session_%s' % sid
+        print self.rc
+        _s = self.rc.get(self.sid)
         self.session_data = cPickle.loads(_s) if _s else {}
 
-    def save_session(self):
+    def clear_session(self):
+        [ self.rc.delete(k) for k in self.rc.keys('session_*') ]
+    def save_session(self,expire=7200):
         self.rc.set(self.sid,cPickle.dumps(self.session_data))
+        self.rc.expire(self.sid,expire)
 
 class MemcacheSessionEngine(SessionEngine):
-    __mc = None
-    def __init__(self,sid,address=['127.0.0.1:11211']):
+    mc = None
+    address = None
+    def __init__(self,sid):
+        if not self.__class__.mc:
+            self.__class__.mc = memcache.Client(self.address)
+        print self.mc
         self.sid = sid
-        if not MemcacheSessionEngine.__mc:
-            MemcacheSessionEngine.__mc = memcache.Client(address)
-        self.mc = MemcacheSessionEngine.__mc
         #print self.mc.get_stats()
         self.session_data = self.mc.get(sid) or {}
-    def save_session(self):
-        self.mc.set(self.sid,self.session_data)
+    def clear_session(self):
+        self.mc.flush_all()
+    def save_session(self,expire=7200):
+        self.mc.set(self.sid,self.session_data,expire)
 
 class SessionEngineFactory(object):
-    def __init__(self,sid,engine_type='redis'):
-            if engine_type == 'memcache':
-                self.se = MemcacheSessionEngine(sid)
-            elif engine_type == 'redis':
-                self.se = RedisSessionEngine(sid)
-
-            #assert self.se,'Get Session Error'
+    def __init__(self,engine_type=SESSION_ENGINE):
+            _type,_address = engine_type.split('://')
+            if _type == 'memcache':
+                self.se = MemcacheSessionEngine
+                self.se.address=[_address]
+            elif _type == 'redis':
+                _ip,_port = _address.split(':')
+                self.se = RedisSessionEngine
+                self.se.address=(_ip,int(_port))
+            print 'USE %s ENGINE !' % _type
+            assert self.se,'Get Session Error'
     def get_session_engine(self):
         return self.se
 
-
+SessionEngine = SessionEngineFactory(SESSION_ENGINE).get_session_engine()
 class Session(dict):
     def __init__(self,sid):
         super(Session,self).__init__()
-        self.se = SessionEngineFactory(sid).get_session_engine()
+        self.se = SessionEngine(sid)
         self.update(self.se.session_data)
     def __getitem__(self, key):
         if not self.has_key(key):
@@ -66,8 +87,9 @@ if __name__ == '__main__':
     d1 = dict(zip(range(130),[ str(i)*10 for i in range(100)]))
     d2 = dict(zip(range(150),[ str(i)*1440 for i in range(150)]))
 
-    s = Session('asd')
-    print type(s['bbb'])
+    s = Session('asdddd')
+    s['ads']= d2
+    print type(s['ads'])
     print s
     #s.clear()
     s.save()

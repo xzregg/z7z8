@@ -34,5 +34,17 @@ def testcpm():
         cmp(d1,d2)
         _d = d2.copy()
     print cmp(d1,d2)
+
+class a(object):
+    val=None
+    def __init__(self):
+        print self.val
+        if not self.__class__.val:
+            self.__class__.val = 123
+        self.val = 1111111111
 if __name__=='__main__':
-    testcpm()
+    aa=a()
+    print aa.val
+    cc=a()
+    print cc.val
+    print a.val
