@@ -67,7 +67,7 @@ class SessionEngineFactory(object):
     def get_session_engine(self):
         return self.se
 
-SessionEngine = SessionEngineFactory(SESSION_ENGINE).get_session_engine()
+#SessionEngine = SessionEngineFactory(SESSION_ENGINE).get_session_engine()
 class Session(dict):
     def __init__(self,sid):
         super(Session,self).__init__()

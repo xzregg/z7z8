@@ -1,8 +1,10 @@
 #coding:utf-8
+#web 的基本处理 包括 session 登录
 
-import sys,os,time,datetime
-import uuid
-import tornado.web
+
+import sys,os,time,datetime,uuid
+
+import tornado.web 
 from session import Session
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -41,3 +43,18 @@ class BaseHandler(tornado.web.RequestHandler):
             print 'log'+'-'*40
         #print 'use time:%s' % (time.time() - self._st)
         self.session.save()
+        
+import threading 
+class testThread(threading.Thread):
+    num = 0
+    def __init__(self,j):
+        super(testThread,self).__init__()
+        self.setDaemon(True)
+        self.j = j
+        testThread.num += 1
+    def run(self):
+        for i in xrange(10):
+                self.j.write('%s<br>' % i)
+                time.sleep(1)
+                self.j.flush()
+        self.j.finish('ok')
