@@ -4,7 +4,10 @@
 import sys,os,time
 import memcache
 import redis
-import cPickle
+try:
+    import cPickle as Pickle
+except:
+    import Pickle
 from  settings import SESSION_ENGINE
 
 
@@ -29,12 +32,12 @@ class RedisSessionEngine(SessionEngine):
         self.sid = 'session_%s' % sid
         print self.rc
         _s = self.rc.get(self.sid)
-        self.session_data = cPickle.loads(_s) if _s else {}
+        self.session_data = Pickle.loads(_s) if _s else {}
 
     def clear_session(self):
         [ self.rc.delete(k) for k in self.rc.keys('session_*') ]
     def save_session(self,expire=7200):
-        self.rc.set(self.sid,cPickle.dumps(self.session_data))
+        self.rc.set(self.sid,Pickle.dumps(self.session_data))
         self.rc.expire(self.sid,expire)
 
 class MemcacheSessionEngine(SessionEngine):
@@ -67,7 +70,7 @@ class SessionEngineFactory(object):
     def get_session_engine(self):
         return self.se
 
-#SessionEngine = SessionEngineFactory(SESSION_ENGINE).get_session_engine()
+SessionEngine = SessionEngineFactory(SESSION_ENGINE).get_session_engine()
 class Session(dict):
     def __init__(self,sid):
         super(Session,self).__init__()
