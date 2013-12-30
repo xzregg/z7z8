@@ -197,11 +197,15 @@ def main():
         c = unicode(c, 'utf-8').encode('gb2312')
         a = unicode(a, 'utf-8').encode('gb2312')
     print '%s %s/%s' % (sys.argv[1], c, a)
+from test import runtime
+
+@runtime
 def test():
     ip='8.8.8.8'
     i = IPInfo('ip.dat')
     (c, a) = i.getIPAddr(ip)
     print '%s %s/%s' % (ip, c, a)
+
 if __name__ == '__main__':
     test()
 
