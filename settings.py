@@ -4,7 +4,7 @@ import sys
 import os
 
 SESSION_ENGINE='memcache://127.0.0.1:11211'
-SESSION_ENGINE='redis://127.0.0.1:1111'
+#SESSION_ENGINE='redis://127.0.0.1:1111'
 
 
 

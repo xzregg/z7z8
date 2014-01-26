@@ -10,14 +10,14 @@ _LogConfingFileName = os.path.join(_PATH,'logconfig.ini')
 logging.config.fileConfig(_LogConfingFileName)
 
 
-class LOGER(object):
+class Logger(object):
     def __new__(cls,name='root'):
          logger = logging.getLogger(name)
          return logger
 
 
 if __name__ == '__main__':
-    log = LOG()
+    log = Logger()
     log.info('info')
     log.critical('critical')
     log.warn('warn')

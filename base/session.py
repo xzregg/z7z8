@@ -30,7 +30,7 @@ class RedisSessionEngine(SessionEngine):
         if not self.__class__.rc:
             self.__class__.rc = redis.Redis(*self.address,db=0)
         self.sid = 'session_%s' % sid
-        print self.rc
+        #print self.rc
         _s = self.rc.get(self.sid)
         self.session_data = Pickle.loads(_s) if _s else {}
 
@@ -82,7 +82,7 @@ class Session(dict):
         return super(Session,self).__getitem__(key)
     def save(self):
         if cmp(self,self.se.session_data):
-            print 'is save'
+            #print 'is save'
             self.se.session_data = self.copy()
             self.se.save_session()
 

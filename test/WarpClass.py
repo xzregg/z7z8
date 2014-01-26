@@ -73,14 +73,46 @@ def  wrapfunc(obj,name,processor,avoid_doublewrap=True):
                 wrappedfunc = classmethod(wrappedfunc)
             else:
                 wrappedfunc = staticmethod(wrappedfunc)
-class A:
-    def  __init__(self):
-        pass
-    @property
-    def val(self):
-        return 1
 
+
+
+class route(object):
+    a = []
+    def __init__(self,url,*ar,**kv):
+        self.url = url
+
+    def __call__(self,obj, *args, **kwargs):
+        self.a.append((self.url,obj))
+        print len(self.a)
+        if inspect.isclass(obj):
+            print 'is class'
+        if inspect.isfunction(obj):
+            print 'is function'
+        setattr(obj,'me',self.a)
+        return obj
+
+
+@route('123')
+def a(request):
+    print a.__dict__
+    print locals()
+    pass
+
+@route('1234')
+def b():
+    b.__dict__['me'] =1
+    print b.__dict__
+    pass
+
+@route('123')
+class cc(object):pass
+
+#b()
+a(1)
+print b.__name__
+print __name__
 if __name__ == "__main__":
     a = A()
     a.val = 23
     print a.val
+    print dir(b)
