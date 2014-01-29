@@ -8,10 +8,11 @@ SESSION_ENGINE='memcache://127.0.0.1:11211'
 
 
 
+__od = os.path.dirname
 SETTINGS = {
     'debug': True,
-    'template_path':os.path.join(os.path.dirname(__file__), "templates"),
-    'static_path':os.path.join(os.path.dirname(__file__), "static"),
+    'template_path':os.path.join(__od(__file__), "templates"),
+    'static_path':os.path.join(__od(__od(__file__)), "static"),
     'cookie_secret':'23123123',
     "gzip" : True,
 }#开启debug模式自动重启
