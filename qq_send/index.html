@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>
+			QQ发送消息
+	</title>	
+<script type="text/javascript" src="/static/jquery.min.js"></script>
+</head>
+<body>
+<hr>
+<fieldset>
+	 <legend>配置信息：</legend>
+	<table>
+		<tr><td>URL:</td><td><input type="text" name="url" value="{{url}}"></td></tr>
+		<tr><td>MD5值:</td><td><input type="text" name="url" value="{{md5}}"></td></tr>
+		<tr><td>检测间隔:</td><td><input type="text" name="interval" value="{{interval}}"></td></tr>
+		<tr><td>QQ群标题:</td><td><input type="text" name="qq_title" value="{{qq_title}}"></td></tr>
+		<tr><td>QQ桌面快捷方式:</td><td><input type="text" name="qq_cmd" value="{{qq_cmd}}"><input type="button" id="start_cmd" value="启动QQ群"></td></tr>
+		<tr><td></td><td><input type="button" id="save" value="保存配置"></td></tr>
+	</table>
+</fieldset>
+
+</body>
+<script type="text/javascript">
+
+function get_alert(url){
+		$.get(url).success(
+		function(data){alert(data)}
+		)
+
+}
+
+	$("#start_cmd").click(function(){
+		get_alert("?action=start_cmd&qq_cmd="+$(this).prev().val())
+	})
+
+</script>
+</html>
