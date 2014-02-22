@@ -11,7 +11,9 @@ def get_traceback():
     del fp
     return message
 
-try:
-    raise IOError, "an i/o error occurred"
-except:
-    print get_traceback()
+
+if __name__=='__main__':
+    try:
+        raise IOError, "an i/o error occurred"
+    except:
+        print get_traceback()

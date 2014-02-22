@@ -10,6 +10,12 @@ import json
 import Queue
 import threading
 import traceback
+import platform
+
+if platform.system() == 'Windows':
+    import win32gui
+    import win32con
+    import win32clipboard as w  
 try:
     import cPickle as  pickle
 except:
@@ -19,6 +25,27 @@ except:
 from settings import SETTINGS
 
 
+    
+class Clipboard:
+    '''
+    @粘贴板
+    '''
+    @classmethod
+    def getText(cls):  
+        w.OpenClipboard()  
+        d = w.GetClipboardData(win32con.CF_TEXT)  
+        w.CloseClipboard()  
+        return d
+    @classmethod
+    def setText(cls,aString):  
+        w.OpenClipboard()  
+        w.EmptyClipboard()  
+        w.SetClipboardData(win32con.CF_TEXT, aString)  
+        w.CloseClipboard()
+    
+def QQSender(Sender):
+    def send_key(self):pass
+    
 
 class ParamsStorage(object):
     '''
@@ -60,7 +87,7 @@ class QQHandler(tornado.web.RequestHandler):
         
     def start_cmd(self):
         '''开个线程启动系统命令'''
-        
+        print Clipboard.getText()
         _t = threading.Thread(target=os.system,args=(self.d['qq_cmd'],))
         _t.setDaemon(True)
         _t.start()
