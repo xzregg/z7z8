@@ -1,59 +1,171 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-	<title>
-			QQ发送消息
-	</title>
-<style>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+<title>QQ发送消息</title> 
+</head> 
+<style> 
+body,h1,h2,h3,h4,h5,h6,hr,p,blockquote,dl,dt,dd,ul,ol,li,pre,
+form,fieldset,legend,button,input,textarea,th,td{margin:0;padding:0;}
+body,button,input,select,textarea{font:12px/1.5 tahoma,arial,\5b8b\4f53;}
+h1,h2,h3,h4,h5,h6{font-size:100%;}
+address,cite,dfn,em,var{font-style:normal;}
+code,kbd,pre,samp{font-family:courier new,courier,monospace;}
+small{font-size:12px;}
+ul,ol{list-style:none;}
+a{text-decoration:none;}
+a:hover{text-decoration:underline;}
+sup{vertical-align:text-top;}
+sub{vertical-align:text-bottom;}
+fieldset,img{border:0;}
+button,input,select,textarea{font-size:100%;}
+table{border-collapse:collapse;border-spacing:0;}
+table td{padding:5px;}
 
-/* css reset www.admin10000.com */
-body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,button,textarea,p,blockquote,th,td { margin:0; padding:0; }
-body { background:#fff; color:#555; font-size:14px; font-family: Verdana, Arial, Helvetica, sans-serif; }
-td,th,caption { font-size:14px; }
-h1, h2, h3, h4, h5, h6 { font-weight:normal; font-size:100%; }
-address, caption, cite, code, dfn, em, strong, th, var { font-style:normal; font-weight:normal;}
-a { color:#555; text-decoration:none; }
-a:hover { text-decoration:underline; }
-img { border:none; }
-ol,ul,li { list-style:none; }
-input, textarea, select, button { font:14px Verdana,Helvetica,Arial,sans-serif; }
-table { border-collapse:collapse; }
-html {overflow-y: scroll;} 
-/* css common */
-.clearfix:after {content: "."; display: block; height:0; clear:both; visibility: hidden;}
-.clearfix { *zoom:1; }
 
-</style>
+
+.box{ margin:20px; width:600px;} 
+.container{background:#FFF; clear:both; margin-top:1px; margin-top:-1px;} 
+.sub-con{border:1px solid #1A613C; background:#FFF; display:none;} 
+.cur-sub-con{ color:black;display:block;} 
+.sub-con a{ line-height:40px} 
+.sub-con p{ text-align:center} 
+.nav{  height:30px; margin-left:10px;} 
+
+.nav ul{ height:28px;} 
+.nav ul li{ list-style:none; display:inline-block;height:28px;line-height:28px; text-align:center;margin-left:-9px;*float:left;*margin-left:-1px;} 
+.nav ul li a{ background:#fff;border:1px solid #1A613C; text-decoration:none; color:#000; height:28px;display:block;border-radius: 10px 10px 0px 0px;} 
+.nav ul li a:hover{ background:#CCEDFB} 
+.nav ul li a.cur{ z-index:9999;border-bottom:1px solid #1A613C; color:black;padding: 0 10px 0 10px;background:cyan;font-weight:800}
+
+.add_set,.del_set{float: right}
+
+#test_div{margin-left: 20px;}
+#response{width:500px;height:200px}
+
+</style> 
+<body> 
+<div class="box"> 
+	<span class="add_set">
+		<a href="javascript:void(0)" id="add_config">增加配置</a>
+	</span>
+	<div class="nav"> 
+	<ul> 
+		{% for i in range(len(params))%}
+		<li><a href="javascript:void(0)" {%if i==0%}class="cur"{%end%}>配置信息{{i+1}}</a></li> 
+		{% end %}
+	</ul> 
+	</div> 
+	<div class="container"> 
+
+		{%for i,p in enumerate(params) %}
+			
+			<div class="sub-con {%if i==0 %}cur-sub-con{%end%}"> 
+				<form index="{{i}}" action="?action=save_params&index={{i}}" method="POST">
+					<span class="del_set"> <a href="javascript:void(0)"> 删除</a></span>
+					<br>
+					<br>
+					<table>
+						<tr><td></td><td><label><input type="checkbox" name="auto_on" {%if p.get('auto_on','') %}checked="checked"{%end%} >自动开启</label></td></tr>
+						<tr><td>URL:</td><td><input type="text" name="url" value="{{p.get('url','')}}" style="width:400px"><a id="test_curl_url" href="javascript:viod(0)">测试获取</a></td></tr>
+						<tr><td>key:</td><td><input type="text" name="app_key" value="{{p.get('app_key','')}}"></td></tr>
+						<tr><td>检测间隔:</td><td><input type="text" name="interval" value="{{p.get('interval','')}}"></td></tr>
+						<tr><td>QQ群标题:</td><td><input type="text" name="qq_title" value="{{p.get('qq_title','')}}"></td></tr>
+						<tr><td>QQ桌面快捷方式:</td><td><input type="text" name="qq_cmd" value="{{p.get('qq_cmd','')}}" style="width:400px">
+						<input type="button" id="start_cmd" value="启动QQ群"></td></tr>
+						<tr><td ></td>
+						<td><label><input type="checkbox" name="use_clipboard" {%if p.get('use_clipboard','') %}checked="checked"{%end%} >使用粘贴板</label>
+							<label><input type="checkbox" name="use_ctrl" {%if p.get('use_ctrl','')%}checked="checked" {%end%}  >使用ctrl</label>
+						</td>
+						</tr>
+						<tr><td></td><td><input type="submit" class="save" value="保存配置"></td></tr>
+					</table>
+					<br>
+				</form>
+			</div> 
+			
+		{%end%}
+
+	</div> 
+</div>
+<div id="test_div">
+	<fieldset>
+		<legend>发送消息测试：</legend>
+	<textarea id="response" name="msg"></textarea>
+	<br>
+	<input id="send_msg" type="button" value="发送">
+	</fieldset>
+</div>
+</body> 
+
+
 <script type="text/javascript" src="/static/jquery.min.js"></script>
-</head>
-<body>
-<hr>
-<fieldset>
-	 <legend>配置信息：</legend>
-	<table>
-		<tr><td>URL:</td><td><input type="text" name="url" value="{{url}}"></td></tr>
-		<tr><td>MD5值:</td><td><input type="text" name="url" value="{{md5}}"></td></tr>
-		<tr><td>检测间隔:</td><td><input type="text" name="interval" value="{{interval}}"></td></tr>
-		<tr><td>QQ群标题:</td><td><input type="text" name="qq_title" value="{{qq_title}}"></td></tr>
-		<tr><td>QQ桌面快捷方式:</td><td><input type="text" name="qq_cmd" value="{{qq_cmd}}">
-		<input type="button" id="start_cmd" value="启动QQ群"></td></tr>
-		<tr><td></td><td><input type="button" id="save" value="保存配置"></td></tr>
-	</table>
-</fieldset>
+<script type="text/javascript"> 
+$(document).ready(function(){ 
+		var intervalID; 
+		var curLi; 
+		$(".nav li a").mouseover(function(){ 
+		curLi=$(this); 
+		intervalID=setInterval(onMouseOver,250);//鼠标移入的时候有一定的延时才会切换到所在项，防止用户不经意的操作 
+	}); 
+	function onMouseOver(){ 
+		$(".cur-sub-con").removeClass("cur-sub-con"); 
+		$(".sub-con").eq($(".nav li a").index(curLi)).addClass("cur-sub-con"); 
+		$(".cur").removeClass("cur");       
+		curLi.addClass("cur"); 
+	} 
+	$(".nav li a").mouseout(function(){ 
+		clearInterval(intervalID); 
+	}); 
 
-</body>
-<script type="text/javascript">
+	$(".nav li a").click(function(){//鼠标点击也可以切换 
+		clearInterval(intervalID); 
+		$(".cur-sub-con").removeClass("cur-sub-con"); 
+		$(".sub-con").eq($(".nav li a").index(curLi)).addClass("cur-sub-con"); 
+		$(".cur").removeClass("cur"); 
+		curLi.addClass("cur"); 
+	}); 
 
-function get_alert(url){
-		$.get(url).success(
-		function(data){alert(data)}
-		)
+	function get_alert(url){
+			$.get(url).success(
+			function(data){alert(data)}
+			)
 
-}
+	}
+	$('#send_msg').click(function(){
+		$.ajax({
+			type:"post",
+			data:$('#response').serialize(),
+			url:'?action=send_msg',
+			success:function(data){
+				alert(data)
+				$('#response').val('')
+			}
+		})
 
+
+	})
 	$("#start_cmd").click(function(){
 		get_alert("?action=start_cmd&qq_cmd="+$(this).prev().val())
 	})
+	$('#add_config').click(function(){
+		
+	})
 
-</script>
-</html>
+	$('#test_curl_url').click(function(){
+		var data = $(this).prev().serialize()
+		$.ajax({
+			type:'post',
+			data:data,
+			url:'?action=curl_url',
+			success:function(data){
+				//alert(data)
+				$('#response').text(data)
+			}
+		})
+
+	})
+	//$(".save").click(function(){})
+}); 
+</script> 
+</html> 
