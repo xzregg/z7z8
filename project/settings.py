@@ -12,7 +12,7 @@ __od = os.path.dirname
 SETTINGS = {
     'debug': True,
     'template_path':os.path.join(__od(__file__), "templates"),
-    'static_path':os.path.join(__od(__od(__file__)), "static"),
+    'static_path':os.path.join(__od(__file__), "static"),
     'cookie_secret':'23123123',
     "gzip" : True,
 }#开启debug模式自动重启

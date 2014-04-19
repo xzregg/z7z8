@@ -12,25 +12,39 @@ import threading
 import traceback
 import platform
 import mimetypes
+import hashlib
+import urllib
 
 #SYSTEMCODING = sys.getdefaultencoding() 
 SYSTEMCODING = 'gb2312'
+
+
+  
 if platform.system() == 'Windows':
     import win32gui
     import win32con
     import win32api
     import win32clipboard as w  
+    if sys.getdefaultencoding() != 'gbk':
+            reload(sys)
+            sys.setdefaultencoding('gbk')
 try:
     import cPickle as  pickle
 except:
     traceback.print_exc()
     import pickle
 
-from settings import SETTINGS
+from settings import SETTINGS,SIGN_KEY
 
 import urllib2,urllib
 import threading
     
+SIGN_KEY = 'oaksodqweack123'
+    
+def get_now():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+def md5(_str):
+    return hashlib.new('md5',_str).hexdigest()
 class Clipboard:
     '''
     @粘贴板
@@ -53,7 +67,7 @@ class Clipboard:
 
 class MailSender(object):
     '''
-    @发邮件
+    @邮件发送
     '''
     pass
 
@@ -62,7 +76,7 @@ class MailSender(object):
 EXAMPLE_PARAM = {"url":'',
           "auto_on":'',
           "app_key":'',
-          "interval":'',
+          "interval":'60',
           "qq_title":'',
           "qq_cmd":'',
           "use_clipboard":'',
@@ -71,10 +85,9 @@ EXAMPLE_PARAM = {"url":'',
 
 class QQSender(object):
     '''
-    @发到qq
+    @QQ发送者
     '''
     def __init__(self,_p):
-        self.on = _p['auto_on']
         self._p = _p
         self.qq_title = _p.get('qq_title')
         self.qq_cmd = _p.get('qq_cmd')
@@ -102,12 +115,12 @@ class QQSender(object):
     def send_enter(self):
         if self._p.get('use_ctrl',''):
             win32api.keybd_event(17,0,0,0)#ctrl键位码是17  
-            win32gui.SendMessage(self.handle, win32con.WM_KEYDOWN, win32con.VK_RETURN,0)
-            win32gui.SendMessage(self.handle, win32con.WM_KEYUP, win32con.VK_RETURN,0)
-            win32api.keybd_event(17,0,win32con.KEYEVENTF_KEYUP,0)
+            win32gui.SendMessage(self.handle, win32con.WM_KEYDOWN, win32con.VK_RETURN)
+            win32gui.SendMessage(self.handle, win32con.WM_KEYUP, win32con.VK_RETURN)
+            win32api.keybd_event(17,0,win32con.KEYEVENTF_KEYUP)
         else:
-            win32gui.SendMessage(self.handle, win32con.WM_KEYDOWN, win32con.VK_RETURN,0)
-            win32gui.SendMessage(self.handle, win32con.WM_KEYUP, win32con.VK_RETURN,0)
+            win32gui.SendMessage(self.handle, win32con.WM_KEYDOWN, win32con.VK_RETURN)
+            win32gui.SendMessage(self.handle, win32con.WM_KEYUP, win32con.VK_RETURN)
 
 
     
@@ -124,18 +137,16 @@ class QQSender(object):
                         win32gui.SendMessage(self.handle, win32con.WM_KEYUP, win32con.VK_RETURN, 0)
                     else:
                         win32gui.SendMessage(self.handle,win32con.WM_CHAR,ord(c),0)
-        time.sleep(0.5)
+        time.sleep(0.3)
         self.send_enter()
 
     def send_msg(self,msgs):
         max_num = 1000#qq最多1024
         msg_len = len(msgs)
         extra_step = 1 if msg_len % max_num else 0
-
         for i in xrange(msg_len / max_num+extra_step):
             msg = msgs[i*max_num:i*max_num+max_num]
             self._send_msg(msg)
-            
         time.sleep(1)
 
 class ParamsStorage(object):
@@ -158,16 +169,69 @@ class ParamsStorage(object):
             traceback.print_exc()
             return [EXAMPLE_PARAM]
         
-
-class MessageManager(threading.Thread):
-    def __init__(self):
-        super(MessageManager,self).__init__()
-        self.ps = ParamsStorage()
-        self.lock = threading.Lock()
+        
+class HttpMsgInstance(threading.Thread):
+    '''
+    @线程消息实例
+    '''
+    def __init__(self,MessageManager,params,lock):
+        super(HttpMsgInstance,self).__init__()
+        self.setDaemon(True)
+        self.ms = MessageManager
+        self.interval = int(params.get('interval',60))
         self.senders = {'QQ':QQSender
                         #'Mail':MailSender
                         }
+        self.lock = lock
+        self.p = params
+        self.on = True
+        self.curl_url = HttpMsgInstance.curl_url
 
+    @staticmethod
+    def curl_url(url=""):
+        _r = ''
+        try:
+            _r = urllib2.urlopen(url,timeout=5).read()
+        except Exception,e:
+            traceback.print_exc()
+            _r = str(e)
+        return _r   
+
+
+    def send_msg(self,msg):
+        try:
+            self.lock.acquire()
+            for n,s in self.senders.items():
+                    if self.p.get('auto_on',''):
+                        sender = s(self.p)
+                        sender.send_msg(msg)
+                          
+        except Exception,e:
+            traceback.print_exc()
+        finally:          
+            self.lock.release() 
+            
+    def run(self):
+        while self.on:
+            time.sleep(int(self.p.get('interval',60))) 
+            if self.ms.on and self.p.get('auto_on',''):
+                    print '[%s] - curl url - %s' % (get_now(),self.p.get('url'))
+                    msg = self.curl_url(self.p.get('url','')).decode('utf-8')
+                    if msg:
+                        self.send_msg(msg)
+            
+            
+class MessageManager(threading.Thread):
+    def __init__(self):
+        super(MessageManager,self).__init__()
+        self.setDaemon(True)
+        self.ps = ParamsStorage()
+        self.lock = threading.Lock()
+        self.instance_map = []
+        self.on = False
+        
+
+       
     @property
     def params(self):
         return  self.ps.params
@@ -175,30 +239,41 @@ class MessageManager(threading.Thread):
     def save_params(self,index,data):
         if  index+1 > len(self.params) :
             self.params.append(data)
+            self.start_instance(data)
         else:
             self.params[index] = data
+            self.instance_map[index].p = data
         self.ps.save()
-
-    @staticmethod
-    def curl_url(url=""):
-        r = urllib2.urlopen(url,timeout=5)
-        return r.read()
     
+    def start_instance(self,p):
+        _t = HttpMsgInstance(self,p,self.lock)
+        self.instance_map.append(_t)
+        _t.start()
+        
     def run(self):
-        self.setDaemon(True)
-        pass
-    
+        for i,p in enumerate(self.params):
+            self.start_instance(p)
+            
     def send_msg(self,msg):
-        for n,s in self.senders.items():
-            for p in self.params:
-                if p.get('auto_on',''):
-                    sender = s(p)
-                    sender.send_msg(msg)
+        for s in self.instance_map:
+            print s
+            s.send_msg(msg)
+    
+    def del_params(self,index):
+        if index < self.params.__len__():
+            self.params.pop(index)
+            self.instance_map[index].on = False
+            self.instance_map[index].join()
+            self.instance_map.pop(index)
+            self.ps.save()
     
 Ms = MessageManager()
-#MsSnender.start()
+Ms.start()
 
 class MessageHandler(tornado.web.RequestHandler):
+    
+    def prepare(self):
+        pass
     
     def post(self):
         return self.get()
@@ -212,13 +287,13 @@ class MessageHandler(tornado.web.RequestHandler):
         if hasattr(self,d['action']):
             return apply(getattr(self,d['action']))
         params = Ms.params
-        self.render('index.html',params=params)
+        self.render('index.html',params=params,daemon_start=Ms.on)
     
     
     def curl_url(self):
         url = self.get_argument('url','')
         if url:
-            response = Ms.curl_url(url)
+            response = HttpMsgInstance.curl_url(url)
             self.write(response)
         else:
             self.write('not url')
@@ -232,8 +307,12 @@ class MessageHandler(tornado.web.RequestHandler):
         for k,v in self.request.arguments.iteritems():
             _d[k] = v[0]
         Ms.save_params(index,_d)
-        self.redirect('/')
+        self.write('成功！')
         
+    def del_params(self):
+        index = int(self.get_argument('index','0'))
+        Ms.del_params(index)
+        self.redirect('/')
         
     def send_msg(self):
         msg = self.get_argument('msg','')
@@ -247,23 +326,27 @@ class MessageHandler(tornado.web.RequestHandler):
         QQSender.start_qqcmd(self.d['qq_cmd'])
         self.write('start_qq_cmd:[%s] OK' % self.d['qq_cmd'])
         
-    @tornado.web.asynchronous
-    def test_msg(self):
-        self.write('测试！')
-        self.finish()
+
+    def daemon(self):
+        is_start = self.get_argument('start', '')
+        if is_start:
+            Ms.on = True
+        else:
+            Ms.on = False
+        self.redirect('/')
         
 application = tornado.web.Application( handlers = [(r'/',MessageHandler),
                                                    #(r"/static/(.*)", tornado.web.StaticFileHandler, {"path":SETTINGS['static_path']})
                                                    ],
                                        **SETTINGS)
-
+SERVER_PORT = 22222
 def single():
-    application.listen(22222)
+    application.listen(SERVER_PORT)
     #tornado.ioloop.PeriodicCallback(lee,3000).start()#增加后台任务
     tornado.ioloop.IOLoop.instance().start()
 
 def mul():
-    sockets = tornado.netutil.bind_sockets(22222)
+    sockets = tornado.netutil.bind_sockets(SERVER_PORT)
     tornado.process.fork_processes(2)#不同逻辑阻塞时不同ip可以分到不同进程
     server = tornado.httpserver.HTTPServer(application, xheaders=True)
     server.add_sockets(sockets)
@@ -271,4 +354,5 @@ def mul():
 
 if __name__ == '__main__':
     tornado.options.parse_command_line()
+    print 'listen port %s' % SERVER_PORT
     single()

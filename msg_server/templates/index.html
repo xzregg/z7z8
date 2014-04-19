@@ -40,11 +40,28 @@ table td{padding:5px;}
 
 .add_set,.del_set{float: right}
 
+#runstatus{text-align:center;
+margin-left:20px;
+margin-right:auto;
+width:600px;
+border-radius:5px;
+border:1px solid #1A613C}
 #test_div{margin-left: 20px;}
 #response{width:500px;height:200px}
 
+
 </style> 
 <body> 
+<div id="runstatus"> 
+定时任务状态:
+{% if not daemon_start%}
+<a href="?action=daemon&start=true">开启</a>
+{%else%}
+<a href="?action=daemon&start=">关闭</a>
+
+{%end%}
+
+</div>
 <div class="box"> 
 	<span class="add_set">
 		<a href="javascript:void(0)" id="add_config">增加配置</a>
@@ -52,7 +69,7 @@ table td{padding:5px;}
 	<div class="nav"> 
 	<ul> 
 		{% for i in range(len(params))%}
-		<li><a href="javascript:void(0)" {%if i==0%}class="cur"{%end%}>配置信息{{i+1}}</a></li> 
+		<li><a href="javascript:void(0)" {%if i==0%}class="cur"{%end%}>配置{{i+1}}</a></li> 
 		{% end %}
 	</ul> 
 	</div> 
@@ -61,24 +78,24 @@ table td{padding:5px;}
 		{%for i,p in enumerate(params) %}
 			
 			<div class="sub-con {%if i==0 %}cur-sub-con{%end%}"> 
-				<form index="{{i}}" action="?action=save_params&index={{i}}" method="POST">
-					<span class="del_set"> <a href="javascript:void(0)"> 删除</a></span>
+				<form index="{{i}}"  method="POST">
+					<span class="del_set"> <a href="javascript:void(0)" class="del"> 删除</a></span>
 					<br>
 					<br>
 					<table>
-						<tr><td></td><td><label><input type="checkbox" name="auto_on" {%if p.get('auto_on','') %}checked="checked"{%end%} >自动开启</label></td></tr>
+						<tr><td></td><td><label><input type="checkbox" name="auto_on" {%if p.get('auto_on','') %}checked="checked"{%end%} >启用</label></td></tr>
 						<tr><td>URL:</td><td><input type="text" name="url" value="{{p.get('url','')}}" style="width:400px"><a id="test_curl_url" href="javascript:viod(0)">测试获取</a></td></tr>
 						<tr><td>key:</td><td><input type="text" name="app_key" value="{{p.get('app_key','')}}"></td></tr>
 						<tr><td>检测间隔:</td><td><input type="text" name="interval" value="{{p.get('interval','')}}"></td></tr>
 						<tr><td>QQ群标题:</td><td><input type="text" name="qq_title" value="{{p.get('qq_title','')}}"></td></tr>
 						<tr><td>QQ桌面快捷方式:</td><td><input type="text" name="qq_cmd" value="{{p.get('qq_cmd','')}}" style="width:400px">
-						<input type="button" id="start_cmd" value="启动QQ群"></td></tr>
+						<input type="button" class="start_cmd" value="启动QQ群"></td></tr>
 						<tr><td ></td>
 						<td><label><input type="checkbox" name="use_clipboard" {%if p.get('use_clipboard','') %}checked="checked"{%end%} >使用粘贴板</label>
 							<label><input type="checkbox" name="use_ctrl" {%if p.get('use_ctrl','')%}checked="checked" {%end%}  >使用ctrl</label>
 						</td>
 						</tr>
-						<tr><td></td><td><input type="submit" class="save" value="保存配置"></td></tr>
+						<tr><td></td><td><input type="button" class="save" value="保存配置"></td></tr>
 					</table>
 					<br>
 				</form>
@@ -91,9 +108,10 @@ table td{padding:5px;}
 <div id="test_div">
 	<fieldset>
 		<legend>发送消息测试：</legend>
+		<input id="send_msg" type="button" value="发送"><br>
 	<textarea id="response" name="msg"></textarea>
 	<br>
-	<input id="send_msg" type="button" value="发送">
+	
 	</fieldset>
 </div>
 </body> 
@@ -145,11 +163,22 @@ $(document).ready(function(){
 
 
 	})
-	$("#start_cmd").click(function(){
+	$(".start_cmd").click(function(){
 		get_alert("?action=start_cmd&qq_cmd="+$(this).prev().val())
 	})
 	$('#add_config').click(function(){
-		
+		var new_lis = $('.nav ul li')
+		var new_li = new_lis.last().clone(true)
+		var num = new_lis.length + 1
+		new_li.find('a').removeClass('cur').html('配置'+num)
+
+		var new_con = $('.sub-con:last').clone(true)
+		new_con.find('form').attr('index',num)
+		new_con.removeClass('cur-sub-con')
+		new_con.appendTo('.container')
+
+		//console.dir(new_li)
+		$('.nav ul').append(new_li)
 	})
 
 	$('#test_curl_url').click(function(){
@@ -165,7 +194,22 @@ $(document).ready(function(){
 		})
 
 	})
-	//$(".save").click(function(){})
+	$(".save").click(function(){
+		var _form  = $(this).parents('form')
+		var url = '?action=save_params&index=' + _form.attr('index')
+		$.ajax({
+			type:"post",
+			url:url,
+			data:_form.serialize(),
+			success:function(data){
+				alert(data)
+			}
+		})
+	})
+	$('.del').click(function(){
+		$(this).attr('href','?action=del_params&index='+ $(this).parents('form').attr('index'))
+
+	})
 }); 
 </script> 
 </html> 
