@@ -2,6 +2,7 @@
 
 from twisted.internet import reactor, protocol
 from twisted.protocols import basic
+import struct
 import time
 class PubProtocol(basic.LineReceiver):
     def __init__(self, factory):
