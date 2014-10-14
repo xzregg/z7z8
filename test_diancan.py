@@ -43,11 +43,12 @@ class MeiCan(object):
     LOGIN_URL = 'https://meican.com/login'
     Address = u'芒果'
     Order_Menu_Names = [u'游爱 - 晚餐',u'游爱 - 午餐']
+    #Order_Menu_Names = [u'游爱 - 晚餐']
     #Order_Restaurant = [u"鲜达", u"绿森林", "游爱早餐", u"山东老家", u"晚餐退餐", u"午餐退餐", u"佰荟餐饮"]
     #Order_Restaurant = [u'鲜达',u'山东老家']
-    Order_Restaurant = [u'绿森林',u'佰荟餐饮']
+    Order_Restaurant = [u'绿森林',u'鲜达',u'山东老家']
     
-    def __init__(self):
+    def __init__(self,username='',password=''):
         br = mechanize.Browser()  
         #options
         br.set_handle_equiv(True)
@@ -57,8 +58,8 @@ class MeiCan(object):
         br.set_handle_robots(False)
         #Follows refresh 0 but not hangs on refresh > 0
         br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
-        self.username = LOGIN_DATA['username']
-        self.password =  LOGIN_DATA['password']
+        self.username = username or LOGIN_DATA['username']
+        self.password = password or  LOGIN_DATA['password']
         #debugging
         #br.set_debug_http(True)
         #br.set_debug_redirects(True)
@@ -104,8 +105,12 @@ class MeiCan(object):
         random_list = []
         for food_item in food_list:
             name,id,restaurants_name,date_id = food_item
-            if restaurants_name in self.Order_Restaurant:
+            if restaurants_name in self.Order_Restaurant :
+                if u'辣'  in name:
+                    continue
                 random_list.append(food_item)
+        if len(random_list) == 0:
+            random_list = food_list
         return random.choice(random_list)
         
     def random_order(self):
@@ -139,9 +144,11 @@ class MeiCan(object):
             if DEBUG:
                 print order_data
             result = self.open_url(order_url, order_data,use_token=False,chunked=True)
-            json_str = self.update_token(result)
+            json_data = self.update_token(result)
+            if json_data.get('errorList',''):
+                print '下单失败!'
             if DEBUG:
-                print json_str
+                print json_data
         self.order_data = ''
 
         
@@ -260,4 +267,15 @@ if __name__ == '__main__':
     mc = MeiCan()
     mc.login()
     mc.random_order()
-    #mc.test_order()
+
+#    mc1 = MeiCan('xiexiaoling@youai.com','123456')
+#    mc1.login()
+#    mc1.random_order()
+    
+    mc1 = MeiCan('fanjunliang@youai.com','123456')
+    mc1.login()
+    mc1.random_order()
+#    mc1 = MeiCan('zhaochufan@youai.com','123456')
+#    mc1.login()
+#    mc1.random_order()
+
