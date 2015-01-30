@@ -49,13 +49,9 @@ class MeiCan(object):
     Order_Menu_Names = [u'游爱 - 晚餐',u'游爱 - 午餐']
     #Order_Restaurant = [u"鲜达", u"绿森林", "游爱早餐", u"山东老家", u"晚餐退餐", u"午餐退餐", u"佰荟餐饮"]
     #Order_Restaurant = [u'鲜达',u'山东老家']
-<<<<<<< HEAD
     Order_Restaurant = []
-=======
-    Order_Restaurant = [u'绿森林',u'佰荟餐饮']
->>>>>>> origin/master
     
-    def __init__(self):
+    def __init__(self,username='',password=''):
         br = mechanize.Browser()  
         #options
         br.set_handle_equiv(True)
@@ -65,22 +61,14 @@ class MeiCan(object):
         br.set_handle_robots(False)
         #Follows refresh 0 but not hangs on refresh > 0
         br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
-<<<<<<< HEAD
+
         self.username = username or LOGIN_DATA['username']
         self.password = password or  LOGIN_DATA['password']
         if DEBUG:
             br.set_debug_http(True)
             br.set_debug_redirects(True)
             br.set_debug_responses(True)
-=======
-        self.username = LOGIN_DATA['username']
-        self.password =  LOGIN_DATA['password']
-        #debugging
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
->>>>>>> origin/master
-        
+
         #User-Agent (this is cheating, ok?)
         self.order_data = ''
         self.br = br
@@ -121,8 +109,7 @@ class MeiCan(object):
         random_list = []
         for food_item in food_list:
             name,id,restaurants_name,date_id = food_item
-<<<<<<< HEAD
-            
+
             if unicode(restaurants_name) in self.Order_Restaurant :
                 if u'面' in name:
                     random_list.append(food_item)
@@ -132,11 +119,7 @@ class MeiCan(object):
                 random_list.append(food_item)
         if len(random_list) == 0:
             random_list = food_list
-        
-=======
-            if restaurants_name in self.Order_Restaurant:
-                random_list.append(food_item)
->>>>>>> origin/master
+
         return random.choice(random_list)
         
     def random_order(self):
@@ -160,6 +143,7 @@ class MeiCan(object):
         #self.order_sure()
     
     def order_sure(self):
+        order_str = 'success'
         order_url = self.url['order_url']
         save_url = self.url['save_order_url']
         for a in self.Addresss:
@@ -177,11 +161,14 @@ class MeiCan(object):
             if DEBUG:
                 print order_data
             result = self.open_url(order_url, order_data,use_token=False,chunked=True)
-            json_str = self.update_token(result)
+            json_data = self.update_token(result)
+            if json_data.get('errorList',''):
+                print '下单失败!',json_data
+                order_str = '失败'
             if DEBUG:
-                print json_str
+                print json_data
         self.order_data = ''
-
+        return order_str
         
     def order(self,corpId,RevisionId):
         self.order_data += '&corpDishRevisionIdList[]=%s' % RevisionId
@@ -303,7 +290,7 @@ def run_web():
     tornado.ioloop.IOLoop.instance().start()
 
 IS_TEST = False
-IS_TEST = True
+#IS_TEST = True
 def dc_loop(account):
     username,password = account
     while True:
@@ -315,16 +302,14 @@ def dc_loop(account):
             mc.login()
             mc.random_order()
             print '[%s] login success!' % username
-
-<<<<<<< HEAD
+            _s = ''
             while True:
                 n = datetime.datetime.now()
                 if (n.hour == 12 and n.minute>=30)or IS_TEST :
-                    
-                    mc.order_sure()
+                    _s = mc.order_sure()
                     break
                 time.sleep(1)
-            print '[%s] - %s order success!' % (now,username)
+            print '[%s] - %s order %s!' % (now,username,_s)
             break
         print '%s [%s] sleep 60 ' % (now,username)
         time.sleep(60)
@@ -344,8 +329,8 @@ account_list = [
                 ]
 import threading
 if __name__ == '__main__':
-    MeiCan.Order_Restaurant = [u'鲜达',u'山东老家']
-    #MeiCan.Order_Restaurant = [u'绿森林',u'佰荟餐饮']
+    #MeiCan.Order_Restaurant = [u'鲜达',u'山东老家']
+    MeiCan.Order_Restaurant = [u'绿森林',u'佰荟餐饮']
     t_list = []
     
     for account in account_list:
@@ -357,10 +342,4 @@ if __name__ == '__main__':
     for f in t_list:
         f.join()
     
-=======
-if __name__ == '__main__':
-    mc = MeiCan()
-    mc.login()
-    mc.random_order()
-    #mc.test_order()
->>>>>>> origin/master
+
