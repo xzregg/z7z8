@@ -12,7 +12,7 @@ import pprint
 import HTMLParser
 html_parser = HTMLParser.HTMLParser()
 import logging
-
+import datetime
 import tornado.httpserver
 import tornado.ioloop
 import tornado.options
@@ -22,15 +22,19 @@ from tornado.web import HTTPError, asynchronous
 from tornado.httpclient import HTTPRequest
 from tornado.options import define, options
 import random
+import traceback
+
 try:
     from tornado.curl_httpclient import CurlAsyncHTTPClient as AsyncHTTPClient
 except ImportError:
     from tornado.simple_httpclient import SimpleAsyncHTTPClient as AsyncHTTPClient
 
-DEBUG = False
+
 if __name__ == '__main__':
     DEBUG = True
     
+DEBUG = False
+
 LOGIN_URL = 'https://meican.com/login'
 LOGIN_DATA = {
     'username':'xiezhaorong@youai.com',
@@ -41,12 +45,12 @@ LOGIN_DATA = {
 
 class MeiCan(object):
     LOGIN_URL = 'https://meican.com/login'
-    Address = u'芒果'
+    Addresss = [u'芒果',u'研发一部']
     Order_Menu_Names = [u'游爱 - 晚餐',u'游爱 - 午餐']
     #Order_Menu_Names = [u'游爱 - 晚餐']
     #Order_Restaurant = [u"鲜达", u"绿森林", "游爱早餐", u"山东老家", u"晚餐退餐", u"午餐退餐", u"佰荟餐饮"]
     #Order_Restaurant = [u'鲜达',u'山东老家']
-    Order_Restaurant = [u'绿森林',u'鲜达',u'山东老家']
+    Order_Restaurant = []
     
     def __init__(self,username='',password=''):
         br = mechanize.Browser()  
@@ -60,10 +64,10 @@ class MeiCan(object):
         br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
         self.username = username or LOGIN_DATA['username']
         self.password = password or  LOGIN_DATA['password']
-        #debugging
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        if DEBUG:
+            br.set_debug_http(True)
+            br.set_debug_redirects(True)
+            br.set_debug_responses(True)
         
         #User-Agent (this is cheating, ok?)
         self.order_data = ''
@@ -105,12 +109,17 @@ class MeiCan(object):
         random_list = []
         for food_item in food_list:
             name,id,restaurants_name,date_id = food_item
-            if restaurants_name in self.Order_Restaurant :
-                if u'辣'  in name:
+            
+            if unicode(restaurants_name) in self.Order_Restaurant :
+                if u'面' in name:
+                    random_list.append(food_item)
+                    continue
+                if u'辣'  in name or u'椒' in name or u'炒饭' in name or u'包' in name:
                     continue
                 random_list.append(food_item)
         if len(random_list) == 0:
             random_list = food_list
+        
         return random.choice(random_list)
         
     def random_order(self):
@@ -123,18 +132,25 @@ class MeiCan(object):
                     if DEBUG:
                         print m_name
                     for k,v in menus.iteritems():
+                        #print k
+                        #print  json.dumps(v, ensure_ascii=False)
                         random_food = self.random_choice_food(v)
                         random_food_id = random_food[1]
                         if DEBUG:
                             print random_food[2],k,random_food[0]
                         self.order(corpId, random_food_id)
                     self.corpIds.append(corpId)
-        self.order_sure()
+        #self.order_sure()
     
     def order_sure(self):
         order_url = self.url['order_url']
         save_url = self.url['save_order_url']
-        address_id = self.address[self.Address]
+        for a in self.Addresss:
+            address_id = self.address.get(a,'')
+            if address_id:
+                print a,address_id
+                break
+        
         order_result = self.open_url(save_url, self.order_data,use_token=False,chunked=True)
         if DEBUG:
             print save_url,self.order_data
@@ -176,8 +192,10 @@ class MeiCan(object):
         self.create_action_url()
         self.set_address()
         menus_item = self.document_pq('.menu_tab_middle a') #获取菜单
+        
         self.create_menus(menus_item)
-        self.print_attr()
+        if DEBUG:
+            self.print_attr()
         
     def print_attr(self):
         print json.dumps(self.week_menus,ensure_ascii=False)
@@ -199,8 +217,10 @@ class MeiCan(object):
     def create_action_url(self):
         url_cont = self.document_pq('#menu_tab')
         for url_name in self.url.keys():
+            
             self.url[url_name] = url_cont.attr('data-%s'%url_name ) or self.url.get(url_name)
-
+            print url_name, self.url[url_name] 
+            
     def get_food_for_restaurant(self,restaurant,menu_name):
         url = restaurant.get('url','')
         restaurants_name = restaurant.get('name','')
@@ -214,9 +234,11 @@ class MeiCan(object):
                 week_food_name_sp = week_food_name.split('/')
                 if len(week_food_name_sp) == 2:
                     week,food_name = week_food_name_sp[:2]
+                    week = week.strip()
+                    food_name = food_name.strip()
                     food_map.setdefault(week,{})
-                    food_id = pq_food.attr('data-rev')
-                    food_data_id = pq_food.attr('data-id')
+                    food_id = pq_food.attr('data-rev').strip()
+                    food_data_id = pq_food.attr('data-id').strip()
                     food_map[week].setdefault(food_name,food_id)
                     
                     self.week_menus.setdefault(menu_name,{})
@@ -229,20 +251,23 @@ class MeiCan(object):
     
     def create_menus(self,menus_item):
         for m in  menus_item:
-            m_pq = pq(m)
-            if m_pq.attr('data-uuid'):
-                menu = {}
-                corpId = m_pq.attr('data-corp_id')
-                menu_name = m_pq.text()
-                menu['corpId'] = corpId
-                restaurant_list = self.open_url('%s?corpId=%s' % (self.url['list_url_corp'],corpId))
-                restaurant_list = json.loads(restaurant_list)
-                restaurants = restaurant_list.get('searchResultList',[])
-                for restaurant in restaurants:
-                    restaurant['foods'] = self.get_food_for_restaurant(restaurant,menu_name) 
-                menu['restaurants'] = restaurants
-                self.menus[menu_name] = menu
-    
+            try:
+                m_pq = pq(m)
+                if m_pq.attr('data-uuid'):
+                    menu = {}
+                    corpId = m_pq.attr('data-corp_id')
+                    menu_name = m_pq.text()
+                    menu['corpId'] = corpId
+                    restaurant_list = self.open_url('%s?corpId=%s' % (self.url['list_url_corp'],corpId))
+                    restaurant_list = json.loads(restaurant_list)
+                    restaurants = restaurant_list.get('searchResultList',[])
+                    for restaurant in restaurants:
+                        restaurant['foods'] = self.get_food_for_restaurant(restaurant,menu_name) 
+                    menu['restaurants'] = restaurants
+                    self.menus[menu_name] = menu
+            except:
+                traceback.print_exc()
+                print  menu_name,'获取失败!'
     
 class DianCanHandler(tornado.web.RequestHandler):
     def get(self):
@@ -262,20 +287,57 @@ def run_web():
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
 
+IS_TEST = False
+IS_TEST = True
+def dc_loop(account):
+    username,password = account
+    while True:
+        now = datetime.datetime.now()
+        if (now.hour == 12 and now.minute >= 20)  or IS_TEST:
+            print '-'* 40
+            print '[%s] login....' % username
+            mc = MeiCan(username=username,password=password)
+            mc.login()
+            mc.random_order()
+            print '[%s] login success!' % username
 
+            while True:
+                n = datetime.datetime.now()
+                if (n.hour == 12 and n.minute>=30)or IS_TEST :
+                    
+                    mc.order_sure()
+                    break
+                time.sleep(1)
+            print '[%s] - %s order success!' % (now,username)
+            break
+        print '%s [%s] sleep 60 ' % (now,username)
+        time.sleep(60)
+
+account_list = [
+                ('xiezhaorong@youai.com','123456'),
+                ('xiexiaoling@youai.com','123456'),
+                ('zhaochufan@youai.com','123456'),
+                ('fanjunliang@youai.com','123456'),
+                ('zengyuanfang@youai.com','fang2014'),
+                ('jianzhenwei@youai.com','123456'),
+                ('linjin@youai.com','123456'),
+                ('lisi@youai.com','123456'),
+                ('wuchaohua@youai.com','123456'),   
+                ('kongfanyi@youai.com','k83783288'),
+                ('wushengcong@youai.com','123456')
+                ]
+import threading
 if __name__ == '__main__':
-    mc = MeiCan()
-    mc.login()
-    mc.random_order()
-
-#    mc1 = MeiCan('xiexiaoling@youai.com','123456')
-#    mc1.login()
-#    mc1.random_order()
+    MeiCan.Order_Restaurant = [u'鲜达',u'山东老家']
+    #MeiCan.Order_Restaurant = [u'绿森林',u'佰荟餐饮']
+    t_list = []
     
-    mc1 = MeiCan('fanjunliang@youai.com','123456')
-    mc1.login()
-    mc1.random_order()
-#    mc1 = MeiCan('zhaochufan@youai.com','123456')
-#    mc1.login()
-#    mc1.random_order()
-
+    for account in account_list:
+        f = threading.Thread(target=dc_loop,args=(account,))
+        f.setDaemon(True)
+        f.start()
+        t_list.append(f)
+        
+    for f in t_list:
+        f.join()
+    
