@@ -46,9 +46,9 @@ class MemcacheSessionEngine(SessionEngine):
     def __init__(self,sid):
         if not self.__class__.mc:
             self.__class__.mc = memcache.Client(self.address)
-        print self.mc
+
         self.sid = sid
-        #print self.mc.get_stats()
+
         self.session_data = self.mc.get(sid) or {}
     def clear_session(self):
         self.mc.flush_all()

@@ -42,9 +42,22 @@ class a(object):
         if not self.__class__.val:
             self.__class__.val = 123
         self.val = 1111111111
+        
+        
+class A(object):
+    def __init__(self,v):
+        self.v = v
+
+    def self_p(self):
+        print self.v
+        A.p(self.v)
+        
+    @classmethod
+    def p(cls,v):
+        print 'cls:%s' % v
+        
 if __name__=='__main__':
-    aa=a()
-    print aa.val
-    cc=a()
-    print cc.val
-    print a.val
+    aa=A('str')
+    aa.p(1)
+    
+    

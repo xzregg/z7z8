@@ -10,7 +10,7 @@ import time
 import json
 import pprint
 import HTMLParser
-html_parser = HTMLParser.HTMLParser()
+
 import logging
 import datetime
 import tornado.httpserver
@@ -23,6 +23,8 @@ from tornado.httpclient import HTTPRequest
 from tornado.options import define, options
 import random
 import traceback
+
+html_parser = HTMLParser.HTMLParser()
 
 try:
     from tornado.curl_httpclient import CurlAsyncHTTPClient as AsyncHTTPClient
@@ -295,7 +297,7 @@ def dc_loop(account):
     username,password = account
     while True:
         now = datetime.datetime.now()
-        if (now.hour == 12 and now.minute >= 20)  or IS_TEST:
+        if (now.hour >= 12 and now.minute >= 20)  or IS_TEST:
             print '-'* 40
             print '[%s] login....' % username
             mc = MeiCan(username=username,password=password)
@@ -305,7 +307,7 @@ def dc_loop(account):
             _s = ''
             while True:
                 n = datetime.datetime.now()
-                if (n.hour == 12 and n.minute>=30)or IS_TEST :
+                if (n.hour >= 12 and n.minute>=30)or IS_TEST :
                     _s = mc.order_sure()
                     break
                 time.sleep(1)
@@ -327,6 +329,7 @@ account_list = [
                 ('kongfanyi@youai.com','k83783288'),
                 ('wushengcong@youai.com','123456')
                 ]
+
 import threading
 if __name__ == '__main__':
     #MeiCan.Order_Restaurant = [u'鲜达',u'山东老家']

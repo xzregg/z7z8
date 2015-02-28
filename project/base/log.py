@@ -1,11 +1,16 @@
 #coding:utf-8
+#日志
+#
+
 
 import time,os,sys
 import logging
 import logging.config
 import traceback
 
-_PATH = os.path.dirname(__file__)
+__od = os.path.dirname
+_PATH = __od(__od(os.path.abspath(__file__)))
+os.chdir(_PATH)
 _LogConfingFileName = os.path.join(_PATH,'logconfig.ini')
 logging.config.fileConfig(_LogConfingFileName)
 
