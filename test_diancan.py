@@ -30,11 +30,12 @@ try:
     from tornado.curl_httpclient import CurlAsyncHTTPClient as AsyncHTTPClient
 except ImportError:
     from tornado.simple_httpclient import SimpleAsyncHTTPClient as AsyncHTTPClient
+    
 
 
 if __name__ == '__main__':
     DEBUG = True
-    
+
 DEBUG = False
 
 LOGIN_URL = 'https://meican.com/login'
@@ -48,9 +49,12 @@ LOGIN_DATA = {
 class MeiCan(object):
     LOGIN_URL = 'https://meican.com/login'
     Addresss = [u'芒果',u'研发一部']
-    Order_Menu_Names = [u'游爱 - 晚餐',u'游爱 - 午餐']
-    #Order_Restaurant = [u"鲜达", u"绿森林", "游爱早餐", u"山东老家", u"晚餐退餐", u"午餐退餐", u"佰荟餐饮"]
-    #Order_Restaurant = [u'鲜达',u'山东老家']
+
+    
+    Order_Menu_Names = {u'新游爱晚餐':[u'佰荟餐饮',u'岗顶湘语'],
+                        u'新游爱午餐':[u'岗顶湘语',u'鲜达']
+                        }
+
     Order_Restaurant = []
     
     def __init__(self,username='',password=''):
@@ -107,12 +111,12 @@ class MeiCan(object):
         html = r.read()
         return html.decode('utf-8')
       
-    def random_choice_food(self,food_list):
+    def random_choice_food(self,food_list,order_restaurant):
         random_list = []
         for food_item in food_list:
             name,id,restaurants_name,date_id = food_item
 
-            if unicode(restaurants_name) in self.Order_Restaurant :
+            if unicode(restaurants_name) in order_restaurant :
                 if u'面' in name:
                     random_list.append(food_item)
                     continue
@@ -125,48 +129,55 @@ class MeiCan(object):
         return random.choice(random_list)
         
     def random_order(self):
-        for m_name in self.Order_Menu_Names:
+        for m_name,order_restaurant in self.Order_Menu_Names.iteritems():
             menu_obj = self.menus.get(m_name,'')
             if menu_obj:
                 corpId = menu_obj.get('corpId','')
                 menus = self.week_menus.get(m_name,{})
                 if menus:
-                    if DEBUG:
-                        print m_name
+                   
+                    print m_name
                     for k,v in menus.iteritems():
-                        #print k
+                        print k
                         #print  json.dumps(v, ensure_ascii=False)
-                        random_food = self.random_choice_food(v)
+                        random_food = self.random_choice_food(v,order_restaurant)
                         random_food_id = random_food[1]
-                        if DEBUG:
-                            print random_food[2],k,random_food[0]
+                        #if DEBUG:
+                        print random_food[2],k,random_food[0],random_food_id,corpId
                         self.order(corpId, random_food_id)
                     self.corpIds.append(corpId)
         #self.order_sure()
     
     def order_sure(self):
-        order_str = 'success'
+        order_str = 'not order'
         order_url = self.url['order_url']
         save_url = self.url['save_order_url']
-        for a in self.Addresss:
-            address_id = self.address.get(a,'')
-            if address_id:
-                print a,address_id
-                break
-        
+
+        print self.address
+        address_id = self.address_id or address_id
         order_result = self.open_url(save_url, self.order_data,use_token=False,chunked=True)
         if DEBUG:
             print save_url,self.order_data
-        #print order_result
+ 
         for corpId in self.corpIds :
+            address_dict = self.address[corpId]
+            for a in self.Addresss:
+                address_id = address_dict.get(a,'')
+                if address_id:
+                    print a,address_id
+                    break
             order_data = 'token=%s&corpAddressId=%s&corpId=%s' % (self.order_token,address_id,corpId)
+            print order_data
             if DEBUG:
                 print order_data
             result = self.open_url(order_url, order_data,use_token=False,chunked=True)
+
             json_data = self.update_token(result)
             if json_data.get('errorList',''):
                 print '下单失败!',json_data
                 order_str = '失败'
+            else:
+                order_str = 'success'
             if DEBUG:
                 print json_data
         self.order_data = ''
@@ -200,7 +211,8 @@ class MeiCan(object):
         self.create_menus(menus_item)
         if DEBUG:
             self.print_attr()
-        
+        print self.order_token
+
     def print_attr(self):
         print json.dumps(self.week_menus,ensure_ascii=False)
         print json.dumps(self.menus,ensure_ascii=False)
@@ -213,17 +225,21 @@ class MeiCan(object):
         '''获取下单位置
         '''
         resp = self.open_url(url=self.url['address_url'],use_token=False,chunked=True)
+
         document_pq = pq(resp)
-        for address in document_pq('div[data-corp_address_id]'):
-            pq_address = pq(address)
-            self.address[pq_address.text()] = pq_address.attr('data-corp_address_id')
+        for ul in document_pq('ul[data-id]'):
+            corpId = pq(ul).attr('data-id')
+            self.address.setdefault(corpId,{})
+            for address in pq(ul).find('div[data-corp_address_id]'):
+                pq_address = pq(address)
+                self.address[corpId][pq_address.text()] = pq_address.attr('data-corp_address_id')
         
     def create_action_url(self):
         url_cont = self.document_pq('#menu_tab')
         for url_name in self.url.keys():
             
             self.url[url_name] = url_cont.attr('data-%s'%url_name ) or self.url.get(url_name)
-            print url_name, self.url[url_name] 
+            #print url_name, self.url[url_name] 
             
     def get_food_for_restaurant(self,restaurant,menu_name):
         url = restaurant.get('url','')
@@ -307,7 +323,7 @@ def dc_loop(account):
             _s = ''
             while True:
                 n = datetime.datetime.now()
-                if (n.hour >= 12 and n.minute>=30)or IS_TEST :
+                if (n.hour >= 12 and n.minute>=30 and n.second>1)or IS_TEST :
                     _s = mc.order_sure()
                     break
                 time.sleep(1)
@@ -321,21 +337,21 @@ account_list = [
                 ('xiexiaoling@youai.com','123456'),
                 ('zhaochufan@youai.com','123456'),
                 ('fanjunliang@youai.com','123456'),
-                ('zengyuanfang@youai.com','fang2014'),
+#                ('zengyuanfang@youai.com','fang2014'),
                 ('jianzhenwei@youai.com','123456'),
                 ('linjin@youai.com','123456'),
-                ('lisi@youai.com','123456'),
                 ('wuchaohua@youai.com','123456'),   
-                ('kongfanyi@youai.com','k83783288'),
-                ('wushengcong@youai.com','123456')
+                ('kongfanyi@youai.com','k83783288')
                 ]
 
 import threading
 if __name__ == '__main__':
-    #MeiCan.Order_Restaurant = [u'鲜达',u'山东老家']
-    MeiCan.Order_Restaurant = [u'绿森林',u'佰荟餐饮']
+
     t_list = []
-    
+    MeiCan.Order_Menu_Names = {u'游爱晚餐':[u'岗顶湘语',u'佰荟餐饮'],
+                               u'游爱午餐':[u'岗顶湘语',u'鲜达']
+                        }
+    MeiCan.address_id = 2123
     for account in account_list:
         f = threading.Thread(target=dc_loop,args=(account,))
         f.setDaemon(True)

@@ -28,8 +28,10 @@ def single():
     tornado.ioloop.IOLoop.instance().start()
 
 def mul():
+    if SETTINGS.get('debug',''):
+        print '请先关闭DEBUG'
     sockets = tornado.netutil.bind_sockets(options.port)
-    tornado.process.fork_processes(options.process_num)                          #不同逻辑阻塞时不同ip可以分到不同进程
+    tornado.process.fork_processes(options.process_num)                         
     server = tornado.httpserver.HTTPServer(application, xheaders=True)
     server.add_sockets(sockets)
     tornado.ioloop.IOLoop.instance().start()
