@@ -25,7 +25,7 @@ class CheckModules(threading.Thread):
                         print 'reload'
                         reload(sys.modules[k])
                         self._d[k][1] = _m_mtime
-            print len(self._d.keys())
+            #print len(self._d.keys())
             time.sleep(1)
 
 

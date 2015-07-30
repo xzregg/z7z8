@@ -45,6 +45,7 @@ class a(object):
         
         
 class A(object):
+    oo = 'oo'
     def __init__(self,v):
         self.v = v
 
@@ -52,12 +53,20 @@ class A(object):
         print self.v
         A.p(self.v)
         
+    def change_oo(self,aa):
+        self.__class__.oo = aa
+        print self.oo
+        print self.__class__.oo
+        
     @classmethod
     def p(cls,v):
         print 'cls:%s' % v
         
 if __name__=='__main__':
     aa=A('str')
-    aa.p(1)
+    aa.change_oo('123123')
+    print A.oo
+    bb = A('asd')
+    print bb.oo
     
     

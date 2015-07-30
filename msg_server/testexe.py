@@ -1,3 +1,94 @@
+#coding:utf-8
+
+import urllib
+import urllib2
+import tornado
+import sys  
+    
+import os
+
+sys.setdefaultencoding('gb2312')  
+
+url = 'http://www.baidu.com'
+
+rsp = urllib2.urlopen(url)
+print rsp.read()
+
+
+print '-' * 40
+print __name__
+
+ss = raw_input(u'输入参数')
+print ss
+
+
+print os.path.join(os.path.dirname(__file__),'Storage.dict')
+
+a = raw_input()
+
+
+
+print u'start tornado server!'
+
+import tornado.ioloop
+import tornado.web
+
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("Hello, world")
+
+application = tornado.web.Application([
+    (r"/", MainHandler),
+])
+
+
+
+
+
+import time,datetime,os,sys
+from tornado.options import define, options
+import tornado.web
+import tornado.httpserver
+import json
+import Queue
+import threading
+import traceback
+import platform
+import mimetypes
+import hashlib
+import urllib
+
+#SYSTEMCODING = sys.getdefaultencoding() 
+SYSTEMCODING = 'gb2312'
+
+
+  
+#if platform.system() == 'Windows':
+import win32gui
+import win32con
+import win32api
+import win32clipboard as w  
+if sys.getdefaultencoding() != 'gbk':
+        reload(sys)
+        sys.setdefaultencoding('gbk')
+try:
+    import cPickle as  pickle
+except:
+    traceback.print_exc()
+    import pickle
+
+from settings import SETTINGS,SIGN_KEY
+
+import urllib2,urllib
+import threading
+    
+SIGN_KEY = 'oaksodqweack123'
+
+
+
+
+
+
 #!/usr/bin/env python
 #coding:utf-8
 #window QQ发送信息
@@ -34,11 +125,11 @@ except:
     traceback.print_exc()
     import pickle
 
-from settings import SETTINGS,SIGN_KEY,PROJECT_ROOT
+from settings import SETTINGS,SIGN_KEY
 
 import urllib2,urllib
 import threading
-
+    
 SIGN_KEY = 'oaksodqweack123'
     
 def get_now():
@@ -149,27 +240,7 @@ class QQSender(object):
             self._send_msg(msg)
         time.sleep(1)
 
-class ParamsStorage(object):
-    '''
-    @参数存储
-    '''
-    __file = os.path.join(PROJECT_ROOT,'Storage.dict')
-    def __init__(self):
-        self.params = self.get()
-    
-    def save(self):
-        with open(self.__file,'wb') as fp:
-            pickle.dump(self.params,fp)
-    
-    def get(self):
-        try : 
-            with open(self.__file,'rb') as fp:
-                return pickle.load(fp)
-        except:
-            traceback.print_exc()
-            return [EXAMPLE_PARAM]
-        
-        
+       
 class HttpMsgInstance(threading.Thread):
     '''
     @线程消息实例
@@ -266,9 +337,10 @@ class MessageManager(threading.Thread):
             self.instance_map[index].join()
             self.instance_map.pop(index)
             self.ps.save()
-    
-Ms = MessageManager()
-Ms.start()
+
+            
+                
+
 
 class MessageHandler(tornado.web.RequestHandler):
     
@@ -352,9 +424,14 @@ def mul():
     server.add_sockets(sockets)
     tornado.ioloop.IOLoop.instance().start()
 
+
+
+
+
 if __name__ == '__main__':
-    print '-' * 40
-    print SETTINGS,SIGN_KEY,PROJECT_ROOT
     tornado.options.parse_command_line()
     print 'listen port %s' % SERVER_PORT
     single()
+
+
+    

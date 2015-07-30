@@ -37,6 +37,7 @@ if __name__ == '__main__':
     DEBUG = True
 
 DEBUG = False
+DEBUG = True
 
 LOGIN_URL = 'https://meican.com/login'
 LOGIN_DATA = {
@@ -153,7 +154,7 @@ class MeiCan(object):
         order_url = self.url['order_url']
         save_url = self.url['save_order_url']
 
-        print self.address
+        #print self.address
         address_id = self.address_id or address_id
         order_result = self.open_url(save_url, self.order_data,use_token=False,chunked=True)
         if DEBUG:
@@ -325,6 +326,14 @@ def dc_loop(account):
                 n = datetime.datetime.now()
                 if (n.hour >= 12 and n.minute>=30 and n.second>1)or IS_TEST :
                     _s = mc.order_sure()
+                    if _s != 'success':                     #如果下单不成功 下单五次呗!
+                        for i in xrange(1,5):
+                            mc.random_order()
+                            _s = mc.order_sure()
+                            if _s  == 'success':
+                                break
+                            print '%s 第　%s 次下单!' % (username,i)
+                            time.sleep(1)
                     break
                 time.sleep(1)
             print '[%s] - %s order %s!' % (now,username,_s)
@@ -337,19 +346,20 @@ account_list = [
                 ('xiexiaoling@youai.com','123456'),
                 ('zhaochufan@youai.com','123456'),
                 ('fanjunliang@youai.com','123456'),
-#                ('zengyuanfang@youai.com','fang2014'),
                 ('jianzhenwei@youai.com','123456'),
                 ('linjin@youai.com','123456'),
                 ('wuchaohua@youai.com','123456'),   
-                ('kongfanyi@youai.com','k83783288')
+                ('wushengcong@youai.com','123456'),   
+                #('kongfanyi@youai.com','k83783288'),
+                 ('kongfanyi@youai.com','123456')
                 ]
 
 import threading
 if __name__ == '__main__':
 
     t_list = []
-    MeiCan.Order_Menu_Names = {u'游爱晚餐':[u'岗顶湘语',u'佰荟餐饮'],
-                               u'游爱午餐':[u'岗顶湘语',u'鲜达']
+    MeiCan.Order_Menu_Names = {u'游爱 ( 晚餐 )':[u'湘语',u'佰荟'],
+                               u'游爱 ( 午餐 )':[u'湘语',u'鲜达']
                         }
     MeiCan.address_id = 2123
     for account in account_list:

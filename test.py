@@ -48,9 +48,7 @@ def get_date_list_from_month(sdate,edate):
         
     return date_list
 if __name__ == '__main__':
-    for i in xrange(1000):
-        key = '1234'
-        pre_number = '%s%s%s'%(key,''.join(random.sample(digit,5)),''.join(random.sample(letter,4)))
-        number = '%s%s'%(pre_number,get_verifCode(pre_number))
-        print number,len(number)
-        
+
+    
+    
+    
